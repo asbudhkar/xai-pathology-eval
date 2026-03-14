@@ -6,12 +6,12 @@ This repository supports training CNN and ViT-based pathology classifiers, compu
 
 ### Overview
 
-- Datasets: `bloodmnist`, `pathmnist`, `pcam`
-- Models: `resnet18`, `efficientnet_b0`, `uni`, `virchow`
-- Explainers: `ig`, `gradcam`, `attnrollout`, `vitshapley`
+- Datasets: `BloodMNIST`, `PathMNIST`, `PCam`
+- Models: `ResNet-18`, `EfficientNet_B0`, `UNI2-h`, `Virchow`
+- Explainers: `IG`, `Grad-CAM`, `Gradient Attention Rollout`, `ViTShapley`
 
 Important note:
-- In this repo, `pathmnist` is loaded from NCT-CRC-HE-100K and split into train/val/test with a fixed `80/10/10` split, not the official MedMNIST PathMNIST split.
+- In this repo, `PathMNIST` is loaded from NCT-CRC-HE-100K and split into train/val/test with a fixed `80/10/10` split, not the official MedMNIST PathMNIST split.
 
 ### Main Files
 
@@ -261,7 +261,7 @@ CUDA_VISIBLE_DEVICES=7 python3 src/plotting/make_heatmap_summary.py \
 
 ### 7. Hugging Face Access for UNI2-h and Virchow
 
-The pretrained `uni` and `virchow` backbones are loaded from Hugging Face through `timm`. To use `pretrained=True`, you may need approved access to the corresponding model repositories and a valid Hugging Face token.
+The pretrained `UNI-2h` and `Virchow` backbones are loaded from Hugging Face through `timm`. To use `pretrained=True`, you may need approved access to the corresponding model repositories and a valid Hugging Face token.
 
 Set one of these environment variables before running training or evaluation with pretrained ViT backbones:
 
@@ -285,7 +285,7 @@ python3 scripts/run_pipeline.py --stages heatmaps --heatmap-seeds 0,1,2
 
 ### ViTShapley Workflow
 
-ViTShapley is only used for `uni` and `virchow`.
+ViTShapley is only used for `UNI2-h` and `Virchow`.
 
 Typical order:
 
@@ -356,7 +356,7 @@ python3 scripts/train_vitshapley_explainer.py \
 
 Expected output:
 
-- `./outputs/runs/<dataset>/<uni2h|virchow2>/vitshapley/seed<seed>/explainer_best.pt`
+- `./outputs/runs/<dataset>/<uni2h|virchow>/vitshapley/seed<seed>/explainer_best.pt`
 
 ### Notes
 
