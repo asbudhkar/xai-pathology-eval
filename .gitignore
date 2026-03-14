@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.pt
+*.pth
+*.pkl
+*.npy
+*.npz
+
+# Local datasets and outputs
+data/
+datasets/
+outputs/
+pcam/
+src/datasets/nct_crc/
