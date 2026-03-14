@@ -61,7 +61,7 @@ def run_heatmaps(root: Path, outputs_dir: Path, python_bin: str, seeds: list[str
 
     datasets = ["bloodmnist", "pathmnist", "pcam"]
     models = ["resnet18", "efficientnet_b0", "uni", "virchow"]
-    model_to_tag = {"uni": "uni2h", "virchow": "virchow2"}
+    model_to_tag = {"uni": "uni2h", "virchow": "virchow"}
 
     for seed in seeds:
         for dataset in datasets:

@@ -104,7 +104,7 @@ Recommended order:
 3. Run explanation metric evaluation.
 4. Aggregate summary tables.
 5. Generate the combined metrics panel and heatmaps.
-6. Optionally train ViTShapley checkpoints for `uni` and `virchow`.
+6. Train ViTShapley checkpoints for `uni` and `virchow` when reproducing the full transformer explainer workflow.
 
 ### 1. Train Classifiers
 
@@ -157,7 +157,7 @@ python3 scripts/eval_faithfulness.py \
   --n 300 \
   --target_mode pred \
   --correct_only \
-  --baseline mean \
+  --baseline blur \
   --fill blur
 ```
 
@@ -172,7 +172,7 @@ python3 scripts/eval_fidelity.py \
   --n 300 \
   --target_mode pred \
   --correct_only \
-  --baseline mean \
+  --baseline blur \
   --fill blur
 ```
 
@@ -187,7 +187,7 @@ python3 scripts/eval_robustness.py \
   --n 300 \
   --target_mode pred \
   --correct_only \
-  --baseline mean
+  --baseline blur
 ```
 
 Example sanity run:
@@ -201,8 +201,16 @@ python3 scripts/eval_sanity_weights.py \
   --n 50 \
   --target_mode pred \
   --correct_only \
-  --baseline mean
+  --baseline blur
 ```
+
+For the original `chil-xai` experiment settings, the baseline choices were dataset-specific:
+
+- `bloodmnist`: `--baseline blur`
+- `pathmnist`: `--baseline blur21`
+- `pcam`: `--baseline blur`
+- faithfulness/fidelity `--fill`: `blur`
+- `vitshapley --vs_baseline`: `blur`
 
 For multiple runs, repeat the evaluation scripts across checkpoints, explainers, and seeds in your own scheduler or cluster setup.
 
@@ -241,20 +249,23 @@ Supported figure behavior:
 - `resnet18` and `efficientnet_b0`: `ig`, `gradcam`
 - `uni` and `virchow`: `ig`, `gradcam`, `attnrollout`, `vitshapley`
 
+For `vitshapley`, the model checkpoint should match the checkpoint family used to train the explainer. In this repo, that means using the masked-finetuned `uni2h_masked` and `virchow_masked` checkpoints together with the corresponding ViTShapley explainer weights.
+
 Example:
 
 ```bash
 CUDA_VISIBLE_DEVICES=7 python3 src/plotting/make_heatmap_summary.py \
-  --ckpts ./outputs/runs/bloodmnist_resnet18_seed0/ckpt_best.pt,./outputs/runs/bloodmnist_efficientnet_b0_seed0/ckpt_best.pt,./outputs/runs/bloodmnist_uni_seed0/ckpt_best.pt,./outputs/runs/bloodmnist_virchow_seed0/ckpt_best.pt \
+  --ckpts ./outputs/runs/bloodmnist_resnet18_seed0/ckpt_best.pt,./outputs/runs/bloodmnist_efficientnet_b0_seed0/ckpt_best.pt,./outputs/runs/bloodmnist/uni2h_masked/seed0/ckpt_best.pt,./outputs/runs/bloodmnist/virchow_masked/seed0/ckpt_best.pt \
   --models resnet18,efficientnet_b0,uni,virchow \
   --dataset bloodmnist \
   --split test \
   --n 5 \
   --img_size 224 \
   --target_mode pred \
-  --vs_baseline mean \
+  --baseline blur \
+  --vs_baseline blur \
   --explainers ig,gradcam,attnrollout,vitshapley \
-  --vs_explainers ./outputs/runs/bloodmnist/uni2h/vitshapley/seed0/explainer_best.pt,./outputs/runs/bloodmnist/uni2h/vitshapley/seed0/explainer_best.pt,./outputs/runs/bloodmnist/uni2h/vitshapley/seed0/explainer_best.pt,./outputs/runs/bloodmnist/virchow2/vitshapley/seed0/explainer_best.pt \
+  --vs_explainers ./outputs/runs/bloodmnist/uni2h/vitshapley/seed0/explainer_best.pt,./outputs/runs/bloodmnist/uni2h/vitshapley/seed0/explainer_best.pt,./outputs/runs/bloodmnist/uni2h/vitshapley/seed0/explainer_best.pt,./outputs/runs/bloodmnist/virchow/vitshapley/seed0/explainer_best.pt \
   --save_pdf \
   --outdir ./outputs/summary/heatmaps_manual/bloodmnist_seed0
 ```
@@ -289,11 +300,11 @@ ViTShapley is only used for `UNI2-h` and `Virchow`.
 
 Typical order:
 
-1. Optional surrogate training
-2. Optional masked fine-tuning
+1. Surrogate training
+2. Masked fine-tuning
 3. ViTShapley explainer training
 
-Optional surrogate:
+Surrogate training:
 
 ```bash
 python3 scripts/train_vitshapley_surrogate.py \
@@ -307,12 +318,26 @@ python3 scripts/train_vitshapley_surrogate.py \
   --device cuda
 ```
 
-Optional masked fine-tuning:
+Masked fine-tuning:
 
 ```bash
 python3 scripts/train_masked_finetune.py \
   --ckpt ./outputs/runs/bloodmnist_uni_seed0/ckpt_best.pt \
-  --outdir ./outputs/runs/bloodmnist/uni2h/masked_finetune/seed0 \
+  --outdir ./outputs/runs/bloodmnist/uni2h_masked/seed0 \
+  --dataset bloodmnist \
+  --img_size 224 \
+  --batch_size 64 \
+  --epochs 5 \
+  --unfreeze_blocks 2 \
+  --device cuda
+```
+
+Virchow masked fine-tuning follows the same pattern:
+
+```bash
+python3 scripts/train_masked_finetune.py \
+  --ckpt ./outputs/runs/bloodmnist_virchow_seed0/ckpt_best.pt \
+  --outdir ./outputs/runs/bloodmnist/virchow_masked/seed0 \
   --dataset bloodmnist \
   --img_size 224 \
   --batch_size 64 \
@@ -325,7 +350,7 @@ Explainer training:
 
 ```bash
 python3 scripts/train_vitshapley_explainer.py \
-  --ckpt ./outputs/runs/bloodmnist/uni2h/masked_finetune/seed0/ckpt_best.pt \
+  --ckpt ./outputs/runs/bloodmnist/uni2h_masked/seed0/ckpt_best.pt \
   --outdir ./outputs/runs/bloodmnist/uni2h/vitshapley/seed0 \
   --dataset bloodmnist \
   --img_size 224 \
@@ -341,7 +366,7 @@ With surrogate scoring:
 
 ```bash
 python3 scripts/train_vitshapley_explainer.py \
-  --ckpt ./outputs/runs/bloodmnist/uni2h/masked_finetune/seed0/ckpt_best.pt \
+  --ckpt ./outputs/runs/bloodmnist/uni2h_masked/seed0/ckpt_best.pt \
   --outdir ./outputs/runs/bloodmnist/uni2h/vitshapley/seed0 \
   --dataset bloodmnist \
   --img_size 224 \
@@ -357,6 +382,11 @@ python3 scripts/train_vitshapley_explainer.py \
 Expected output:
 
 - `./outputs/runs/<dataset>/<uni2h|virchow>/vitshapley/seed<seed>/explainer_best.pt`
+
+When evaluating or visualizing `vitshapley`, pair these explainer checkpoints with:
+
+- `./outputs/runs/<dataset>/uni2h_masked/seed<seed>/ckpt_best.pt`
+- `./outputs/runs/<dataset>/virchow_masked/seed<seed>/ckpt_best.pt`
 
 ### Notes
 
